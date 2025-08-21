@@ -324,6 +324,27 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("pull request opened");
   });
 
+  test("should generate prompt for pull_request_target event", () => {
+    const envVars: PreparedContext = {
+      repository: "owner/repo",
+      claudeCommentId: "12345",
+      triggerPhrase: "@claude",
+      eventData: {
+        eventName: "pull_request_target",
+        eventAction: "opened",
+        isPR: true,
+        prNumber: "888",
+      },
+    };
+
+    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+
+    expect(prompt).toContain("<event_type>PULL_REQUEST</event_type>");
+    expect(prompt).toContain("<is_pr>true</is_pr>");
+    expect(prompt).toContain("<pr_number>888</pr_number>");
+    expect(prompt).toContain("pull request opened");
+  });
+
   test("should include custom instructions when provided", () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
@@ -836,6 +857,44 @@ describe("getEventTypeAndContext", () => {
 
     expect(result.eventType).toBe("REVIEW_COMMENT");
     expect(result.triggerContext).toBe("PR review comment with '@claude'");
+  });
+
+  test("should return correct type and context for pull_request event", () => {
+    const envVars: PreparedContext = {
+      repository: "owner/repo",
+      claudeCommentId: "12345",
+      triggerPhrase: "@claude",
+      eventData: {
+        eventName: "pull_request",
+        eventAction: "opened",
+        isPR: true,
+        prNumber: "123",
+      },
+    };
+
+    const result = getEventTypeAndContext(envVars);
+
+    expect(result.eventType).toBe("PULL_REQUEST");
+    expect(result.triggerContext).toBe("pull request opened");
+  });
+
+  test("should return correct type and context for pull_request_target event", () => {
+    const envVars: PreparedContext = {
+      repository: "owner/repo",
+      claudeCommentId: "12345",
+      triggerPhrase: "@claude",
+      eventData: {
+        eventName: "pull_request_target",
+        eventAction: "synchronize",
+        isPR: true,
+        prNumber: "456",
+      },
+    };
+
+    const result = getEventTypeAndContext(envVars);
+
+    expect(result.eventType).toBe("PULL_REQUEST");
+    expect(result.triggerContext).toBe("pull request synchronize");
   });
 
   test("should return correct type and context for issue assigned", () => {
